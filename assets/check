@@ -97,7 +97,6 @@ if [[ "$bitbucket_type" == "server" ]]; then
     echo "${prs}" | jq --argjson version_updated_at "${version_updated_at}" '
         map(. + {updated_at: .updated_at|tonumber})
         | map(select(.updated_at >= $version_updated_at))
-        | map(select(.title | ascii_downcase | contains("wip") == false))
         | sort_by(.updated_at)
         | .
         | map(del(.updated_at))' >&3
@@ -138,9 +137,8 @@ elif [[ "$bitbucket_type" == "cloud" ]]; then
         exit
     fi
 
-    # take the list of PRs | filter out containing "wip" in title | sort by update-date of commits | remove the date | pick latest PR, wrap as array for concourse
+    # take the list of PRs | sort by update-date of commits | remove the date | pick latest PR, wrap as array for concourse
     jq -n --argjson prs "${prs}" '[ $prs
-        | map(select(if .title | test("wip"; "i") then false else true end))
         | sort_by(.updated_at)
         | map(del(.updated_at))
         | .[-1] ]' >&3
